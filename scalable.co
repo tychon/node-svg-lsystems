@@ -1,0 +1,139 @@
+
+# Check if there are enough arguments given:
+if process.argv.length != 4
+  console.log "You have to give two arguments:"
+  console.log "1. The L system as JSON"
+  console.log "2. The output SVG file"
+  return
+
+fs = require \fs
+
+console.log "Load L system from #{process.argv[2]} ..."
+config = JSON.parse fs.readFileSync process.argv[2] , \utf8
+
+console.log config
+
+############
+console.log "\nRunning L system ..."
+
+word = config.axiom
+for iteration til config.iterations
+  console.log "iteration #{iteration+1} ..."
+  # The word where the rules are applied for
+  # every character in `word`:
+  newword = ''
+  for ch of word
+    rule_found = false
+    for rule of config.rules
+      if rule.0 is ch
+        newword += rule.1
+        rule_found = true
+    if not rule_found
+      # There is no rule for producing
+      # anything out of `ch`, therefore
+      # it is appended to `newword` plainly.
+      newword += ch
+  word = newword
+console.log "Word is now #{word.length} characters long."
+
+
+############
+console.log "\nGenerating graph ..."
+
+# Convert degrees into radian measure:
+theta = config.theta/360 * 2*Math.PI
+# Save minimum and maximum coordinates
+# to perform transformations later:
+minx = 0
+miny = 0
+maxx = 0
+maxy = 0
+# Stack of positions,
+# the newest element will be saved in pos.0 :
+pos = [{
+  x: 0
+, y: 0
+, rot: config.initial_heading/360 * 2*Math.PI
+}]
+visible_lines = 0
+points = 'M0 0 ' # start of SVG path
+for ch of word
+  switch ch
+  case \[
+    # Save current position and orientation:
+    pos.unshift {} <<< pos.0
+  case \]
+    # Go to previous saved coordinates:
+    if pos.length < 1
+      console.warn "There are more ']' than '[' !"
+      return
+    pos.shift!
+    points += "M#{pos.0.x} #{pos.0.y} "
+  case \+
+    # rotate left
+    pos.0.rot -= theta
+  case \-
+    # rotate right
+    pos.0.rot += theta
+  default
+    if /[A-Z]/.test ch
+      # draw a line
+      pos.0.x += Math.cos pos.0.rot
+      pos.0.y += Math.sin pos.0.rot
+      points += "L#{pos.0.x} #{pos.0.y} "
+      visible_lines++
+    else if /[a-z]/.test ch
+      # move
+      pos.0.x += Math.cos pos.0.rot
+      pos.0.y += Math.sin pos.0.rot
+      points += "M#{pos.0.x} #{pos.0.y} "
+    else
+      console.warn "Unknown character: '#{ch}'"
+      return
+  if pos.0.x < minx then minx = pos.0.x
+  if pos.0.x > maxx then maxx = pos.0.x
+  if pos.0.y < miny then miny = pos.0.y
+  if pos.0.y > maxy then maxy = pos.0.y
+
+console.log "Number of visible lines: #{visible_lines}"
+
+graph_width = maxx - minx
+graph_height = maxy - miny
+scale_width = config.image_width / graph_width
+scale_height = config.image_height / graph_height
+# Select smaller scaling:
+if scale_width < scale_height then scale = scale_width
+else scale = scale_height
+# Calculate translation and center fractal:
+translate_width = -minx*scale
+if graph_width*scale < config.image_width
+  translate_width += (config.image_width - graph_width*scale) / 2
+translate_height = -miny*scale
+if graph_height*scale < config.image_height
+  translate_height += (config.image_height - graph_height*scale) / 2
+
+console.log "scaling: #{scale}"
+console.log "translation: x: #{translate_width} y: #{translate_height}"
+
+############
+console.log "\nWriting SVG data into #{process.argv[3]} ..."
+
+out = """
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+ 
+<svg xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events"
+    version="1.1" baseProfile="full"
+    width="#{config.image_width}px" height="#{config.image_height}px">
+  <g transform="translate(#{translate_width}, #{translate_height}) scale(#{scale}, #{scale})">
+    <path d='#{points}' style="#{config.style}" />
+  </g>
+</svg>
+"""
+
+fs.writeFileSync process.argv[3], out, \utf8
+console.log "File size: #{out.length} bytes."
+
+console.log "DONE. :-)"
+
