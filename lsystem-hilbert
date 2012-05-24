@@ -1,0 +1,13 @@
+{
+  "axiom": "a",
+  "rules": [
+    ["a", "+bF-aFa-Fb+"],
+    ["b", "-aF+bFb+Fa-"]
+  ],
+  "iterations": 10,
+  "initial_heading": 0,
+  "theta": 90,
+  "style": "fill: white; stroke: red; stroke-width: 0.1",
+  "image_width": "500",
+  "image_height": "500"
+}
