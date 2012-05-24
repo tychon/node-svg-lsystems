@@ -1,12 +1,12 @@
 {
-  "axiom": "F",
+  "axiom": "F--F--F",
   "rules": [
     ["F", "F+F--F+F"]
   ],
   "iterations": 3,
   "initial_heading": 0,
   "theta": 60,
-  "style": "fill: white; stroke: red; stroke-width: 0.1",
+  "style": "fill: white; stroke: black; stroke-width: 0.1",
   "image_width": "500",
   "image_height": "500"
 }
