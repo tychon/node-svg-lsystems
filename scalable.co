@@ -83,10 +83,11 @@ for ch of word
       points += "L#{pos.0.x} #{pos.0.y} "
       visible_lines++
     else if /[a-z]/.test ch
+      ;
       # move
-      pos.0.x += Math.cos pos.0.rot
-      pos.0.y += Math.sin pos.0.rot
-      points += "M#{pos.0.x} #{pos.0.y} "
+      #pos.0.x += Math.cos pos.0.rot
+      #pos.0.y += Math.sin pos.0.rot
+      #points += "M#{pos.0.x} #{pos.0.y} "
     else
       console.warn "Unknown character: '#{ch}'"
       return
